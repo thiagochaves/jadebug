@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "jadebug"
+version = "0.1.0"
+description = "A TUI debugger for java programs."
+authors = ["Thiago Chaves <zotw22o99@mozmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+textual = "0.23.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.3.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

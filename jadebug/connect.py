@@ -4,6 +4,9 @@ from enum import Enum
 import typing
 
 
+_header_length = 11
+
+
 class Connection:
     def __init__(self, socket):
         self.socket = socket
@@ -13,13 +16,13 @@ def connect_to_jvm() -> Connection:
     """Connect to a JVM."""
     sck = socket.socket()
     sck.connect(("localhost", 5005))
-    sck.send("JDWP-Handshake".encode("utf-8"))
-    shake = sck.recv(1024).decode("ascii")
-    if shake != "JDWP-Handshake":
+    handshake_string = "JDWP-Handshake"
+    sck.send(handshake_string.encode("utf-8"))
+    shake = sck.recv(len(handshake_string)).decode("ascii")
+    if shake != handshake_string:
         raise Exception("Handshake failed.")
-    header = deserialize_header(sck.recv(11))
-    print(header)
-    package = header.deserialize(sck.recv(header.length - 11))
+    header = deserialize_header(sck)
+    package = header.deserialize(sck)
     print(package)
     return Connection(sck)
 
@@ -187,7 +190,7 @@ class Header:
         self.length = length
         self.id = id
 
-    def deserialize(self, data: bytes) -> typing.Union[Reply, Command]:
+    def deserialize(self, socket: socket.socket) -> typing.Union[Reply, Command]:
         return Command()
 
 
@@ -201,7 +204,7 @@ class ReplyHeader(Header):
     def __repr__(self):
         return f"ReplyHeader(length={self.length}, id={self.id}, code={self.code})"
 
-    def deserialize(self, data: bytes) -> Reply:
+    def deserialize(self, socket: socket.socket) -> Reply:
         return Reply()
 
 
@@ -217,12 +220,14 @@ class CommandHeader(Header):
     def __repr__(self):
         return f"CommandHeader(length={self.length}, id={self.id}, cmd_set={self.cmd_set}, cmd={self.cmd})"
 
-    def deserialize(self, data: bytes) -> Command:
+    def deserialize(self, socket: socket.socket) -> Command:
+        data = socket.recv(self.length - _header_length)
         return self.cmd.deserialize(self, data)
 
 
-def deserialize_header(data: bytes) -> Header:
-    """Deserialize a header from a byte string."""
+def deserialize_header(socket: socket.socket) -> Header:
+    """Deserialize a header from a connected socket."""
+    data = socket.recv(_header_length)
     length = int.from_bytes(data[0:4], byteorder="big")
     id = int.from_bytes(data[4:8], byteorder="big")
     flags = int.from_bytes(data[8:9], byteorder="big")

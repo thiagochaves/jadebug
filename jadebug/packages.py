@@ -1,10 +1,7 @@
 from __future__ import annotations
-import socket
-from enum import Enum
-import typing
-from .field import ByteField, IntField, ThreadId
+from .field import ByteField, IntField
 from .event import Event
-from .header import Command, deserialize_header, CommandHeader, CommandSet, CommandId
+from .header import Command, CommandHeader, CommandSet, CommandId
 
 
 class CommandFactoryImplementation:
@@ -47,4 +44,9 @@ class CompositeCommand(Command):
         return CompositeCommand(header, suspend_policy, event_count, events)
 
     def __repr__(self):
-        return f"CompositeCommand(header={self.header}, suspend_policy={self.suspend_policy}, event_count={self.event_count}, events={self.events})"
+        return (
+            f"CompositeCommand(header={self.header}, "
+            "suspend_policy={self.suspend_policy}, "
+            "event_count={self.event_count}, "
+            "events={self.events})"
+        )

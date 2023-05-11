@@ -76,7 +76,11 @@ class CommandHeader(Header):
         self.command_id = CommandId(_command_sets[cmd_set], cmd)
 
     def __repr__(self):
-        return f"CommandHeader(length={self.length}, id={self.id}, cmd_id={self.command_id})"
+        return (
+            f"CommandHeader(length={self.length}, "
+            "id={self.id}, "
+            "cmd_id={self.command_id})"
+        )
 
     def deserialize(self, socket: socket.socket, factory: CommandFactory) -> Command:
         data = socket.recv(self.length - _header_length)
@@ -104,7 +108,5 @@ class CommandFactory(Protocol):
     def __call__(self, header: CommandHeader, data: bytes) -> Command:
         ...
 
-    def register_command(
-        self, cmd_set: CommandSet, cmd: int, cls: Type[Command]
-    ):
+    def register_command(self, cmd_set: CommandSet, cmd: int, cls: Type[Command]):
         ...

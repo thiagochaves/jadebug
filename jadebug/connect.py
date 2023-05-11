@@ -1,14 +1,8 @@
 from __future__ import annotations
 import socket
-from enum import Enum
-import typing
-from .field import ByteField, IntField, ThreadId
-from .event import Event
 from .header import (
     Command,
     deserialize_header,
-    CommandHeader,
-    CommandSet,
     Reply
 )
 from .packages import CommandFactoryImplementation

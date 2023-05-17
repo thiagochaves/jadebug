@@ -4,6 +4,11 @@ from enum import Enum
 
 
 class Event:
+    kind: EventKind
+
+    def __init__(self, kind: EventKind) -> None:
+        self.kind = kind
+
     @staticmethod
     def deserialize(data: bytes) -> Event:
         event_kind = ByteField.deserialize(data[0:1])
@@ -16,6 +21,7 @@ class EventVmStart(Event):
     thread: ThreadId
 
     def __init__(self, request_id: IntField, thread: ThreadId) -> None:
+        super().__init__(EventKind.VM_START)
         self.request_id = request_id
         self.thread = thread
 
@@ -27,6 +33,22 @@ class EventVmStart(Event):
 
     def __repr__(self):
         return f"EventVmStart(request_id={self.request_id}, thread={self.thread})"
+
+
+class EventVmDeath(Event):
+    request_id: IntField
+
+    def __init__(self, request_id: IntField) -> None:
+        super().__init__(EventKind.VM_DEATH)
+        self.request_id = request_id
+
+    @staticmethod
+    def deserialize(data: bytes) -> EventVmDeath:
+        request_id = IntField.deserialize(data[0:4])
+        return EventVmDeath(request_id)
+
+    def __repr__(self):
+        return f"EventVmDeath(request_id={self.request_id})"
 
 
 class EventKind(Enum):
@@ -57,4 +79,7 @@ class EventKind(Enum):
     VM_DISCONNECTED = 100
 
 
-_event_kinds = {EventKind.VM_START.value: EventVmStart}
+_event_kinds = {
+    EventKind.VM_START.value: EventVmStart,
+    EventKind.VM_DEATH.value: EventVmDeath,
+}

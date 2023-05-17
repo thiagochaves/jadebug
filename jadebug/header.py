@@ -15,9 +15,13 @@ class PackageType(Enum):
 
 class CommandSet(Enum):
     EVENT = 64
+    VIRTUAL_MACHINE = 1
 
 
-_command_sets = {64: CommandSet.EVENT}
+_command_sets = {
+    64: CommandSet.EVENT,
+    1: CommandSet.VIRTUAL_MACHINE,
+}
 
 
 @dataclass(frozen=True)
@@ -28,6 +32,7 @@ class CommandId:
 
 class CommandType(Enum):
     COMPOSITE_EVENT = CommandId(CommandSet.EVENT, 100)
+    RESUME = CommandId(CommandSet.VIRTUAL_MACHINE, 9)
 
 
 class Command:
@@ -35,9 +40,18 @@ class Command:
     def deserialize(header: CommandHeader, data: bytes) -> Command:
         return Command()
 
+    def serialize(self) -> bytes:
+        return b""
+
 
 class Reply:
-    pass
+    header: ReplyHeader
+
+    def __init__(self, header: ReplyHeader) -> None:
+        self.header = header
+
+    def __repr__(self):
+        return f"Reply(header={self.header})"
 
 
 class Header:
@@ -53,6 +67,9 @@ class Header:
     ) -> Reply | Command:
         return Command()
 
+    def serialize(self) -> bytes:
+        return b""
+
 
 class ReplyHeader(Header):
     code: int
@@ -65,7 +82,7 @@ class ReplyHeader(Header):
         return f"ReplyHeader(length={self.length}, id={self.id}, code={self.code})"
 
     def deserialize(self, socket: socket.socket, factory: CommandFactory) -> Reply:
-        return Reply()
+        return Reply(self)
 
 
 class CommandHeader(Header):
@@ -75,16 +92,29 @@ class CommandHeader(Header):
         super().__init__(length, id)
         self.command_id = CommandId(_command_sets[cmd_set], cmd)
 
+    @classmethod
+    def from_command_id(cls, length: int, id: int, command_id: CommandId) -> CommandHeader:
+        return cls(length, id, command_id.command_set.value, command_id.command_code)
+
     def __repr__(self):
         return (
             f"CommandHeader(length={self.length}, "
-            "id={self.id}, "
-            "cmd_id={self.command_id})"
+            f"id={self.id}, "
+            f"cmd_id={self.command_id})"
         )
 
     def deserialize(self, socket: socket.socket, factory: CommandFactory) -> Command:
         data = socket.recv(self.length - _header_length)
         return factory(self, data)
+
+    def serialize(self) -> bytes:
+        return (
+            self.length.to_bytes(4, byteorder="big")
+            + self.id.to_bytes(4, byteorder="big")
+            + PackageType.COMMAND.value.to_bytes(1, byteorder="big")
+            + self.command_id.command_set.value.to_bytes(1, byteorder="big")
+            + self.command_id.command_code.to_bytes(1, byteorder="big")
+        )
 
 
 def deserialize_header(socket: socket.socket) -> Header:

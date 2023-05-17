@@ -18,6 +18,9 @@ class Connection:
         package = header.deserialize(self.socket, self.factory)
         return package
 
+    def send_command(self, command: Command):
+        self.socket.send(command.serialize())
+
 
 def connect_to_jvm() -> Connection:
     """Connect to a JVM."""

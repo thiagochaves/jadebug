@@ -1,7 +1,15 @@
 from __future__ import annotations
 from .field import ByteField, IntField
 from .event import Event
-from .header import Command, CommandHeader, CommandSet, CommandId
+from .header import Command, CommandHeader, CommandSet, CommandId, CommandType
+
+_id = 0
+
+
+def generate_id() -> int:
+    global _id
+    _id += 1
+    return _id
 
 
 class CommandFactoryImplementation:
@@ -46,7 +54,17 @@ class CompositeCommand(Command):
     def __repr__(self):
         return (
             f"CompositeCommand(header={self.header}, "
-            "suspend_policy={self.suspend_policy}, "
-            "event_count={self.event_count}, "
-            "events={self.events})"
+            f"suspend_policy={self.suspend_policy}, "
+            f"event_count={self.event_count}, "
+            f"events={self.events})"
         )
+
+
+class ResumeCommand(Command):
+    header: CommandHeader
+
+    def __init__(self) -> None:
+        self.header = CommandHeader.from_command_id(11, generate_id(), CommandType.RESUME.value)
+
+    def serialize(self) -> bytes:
+        return self.header.serialize()
